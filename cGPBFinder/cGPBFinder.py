@@ -1,4 +1,5 @@
 import csv
+import math
 import numpy as np
 
 class cGBPFinder():
@@ -28,11 +29,13 @@ class cGBPFinder():
 	def getDictionary(self):
 		return self.__dict
 
-	def confirmcGPB(self,freq_set):
+	def __getInstanceCount(self,freq_set):
 		expressed_and_alive = 0
 		expressed_and_dead  = 0
+		expressed = 0
 		unexpressed_and_alive = 0
 		unexpressed_and_dead  = 0
+		unexpressed = 0
 		for patient in self.__dict.keys():
 			freq_set_contained = list(freq_set)
 			patient_alive =  False
@@ -47,19 +50,37 @@ class cGBPFinder():
 
 			if(False not in freq_set_contained and patient_alive):
 				expressed_and_alive+=1
+				expressed+=1
 			elif(False not in freq_set_contained and not patient_alive):
 				expressed_and_dead+=1
+				expressed+=1
 			elif(False in freq_set_contained and patient_alive):
 				unexpressed_and_alive+=1
+				unexpressed+=1
 			elif(False in freq_set_contained and not patient_alive):
 				unexpressed_and_dead+=1
+				unexpressed+=1
 
-		return {"expressed and alive:":expressed_and_alive, "expressed and dead:":expressed_and_dead, 
-		"unexpressed and alive:":unexpressed_and_alive, "unexpressed and dead:":unexpressed_and_dead}
+		return {"expressed and alive":expressed_and_alive, "expressed and dead":expressed_and_dead, "expressed":expressed, 
+		"unexpressed and alive":unexpressed_and_alive, "unexpressed and dead":unexpressed_and_dead, "unexpressed":unexpressed}
 
 	
-	def sigMeasure():
-		print("TO-DO")
+	def __twoProportionsZTest(self,count):
+		p_1 = float(count["expressed and alive"])/float(count["expressed"])
+		p_2 = float(count["unexpressed and alive"])/float(count["unexpressed"])
+		p   = (float(count["expressed and alive"])+float(count["unexpressed and alive"])) \
+			/(float(count["expressed"])+float(count["unexpressed"]))
+		z_score = ((p_1-p_2)-0.0)/(math.sqrt(p*(1.0-p)*(1/float(count["expressed"])+1/float(count["unexpressed"]))))
+		return z_score
+
+	def confirmcGPB(self,freq_set):
+		count = self.__getInstanceCount(freq_set)
+		z_score = self.__twoProportionsZTest(count)
+		if(-1.96 <= z_score <= 1.96):
+			return {"z-score":z_score,"statistically different?": True}
+		else:
+			return {"z-score":z_score,"statistically different?": False}
+		
 
 finder = cGBPFinder('input_clinic.tsv','input_expr.tsv')
 print(finder.getDictionary())
