@@ -243,16 +243,20 @@ class FrequentItemsetMiner(object):
 		self.duplicate_solutions = duplicate_solutions
 		self.thresholds = None
 
-	def initialize(self, transactions, discretization_function):
+	def initialize(self, transactions, discretization_function=None):
 		discretized_columns = []
 		self.discretized_transactions = []
+		self.transactions = transactions
 		self.discretization_function = discretization_function
-		for c in range(len(transactions[0])):
-			column = [row[c] for row in transactions]
-			discretized_columns.extend(self.discretization_function(column))
-		for r in range(len(discretized_columns[0])):
-			discretized_transaction = [dc[r] for dc in discretized_columns]
-			self.discretized_transactions.append(discretized_transaction)
+		if self.discretization_function:
+			for c in range(len(transactions[0])):
+				column = [row[c] for row in transactions]
+				discretized_columns.extend(self.discretization_function(column))
+			for r in range(len(discretized_columns[0])):
+				discretized_transaction = [dc[r] for dc in discretized_columns]
+				self.discretized_transactions.append(discretized_transaction)
+		else:
+			self.discretized_transactions = self.transactions
 		return self.discretized_transactions
 	
 	def run(self, thresholds):
@@ -342,6 +346,18 @@ def test_discretization():
 	for r in discretized_data:
 		print(r)
 
+def test_basic_fim():
+	T = [[1,1,0,1,1],
+	    [0,1,1,0,1],
+	    [1,1,0,1,1],
+	    [1,1,1,0,1],
+	    [1,1,1,1,1],
+	    [0,1,1,1,0]]
+	fim = FrequentItemsetMiner()
+	fim.initialize(T)
+	solutions = fim.run([2,3,4])
+	print(solutions)
+
 def test_fim_with_duplicates():
 	T = [[0.0749417049434653, 0.47955356469803334, 0.3003988003726794, 0.43098345314354636, 0.6214806456348348, 0.23950080880342106, 0.19368804850236376, 0.3099796805878434, 0.3372493874497201, 0.9638462398347232],
 		[0.7041122457976033, 0.18374838591247133, 0.4321317486192555, 0.679356838110222, 0.2892176951157458, 0.3954409838738262, 0.9809593890458055, 0.6506815438103337, 0.9457975825867121, 0.09815536072771014],
@@ -377,3 +393,5 @@ if __name__ == "__main__":
 	test_fim_with_duplicates()
 	print("WITHOUT DUPLICATES:")
 	test_fim_without_duplicates()
+	print("BASIC")
+	test_basic_fim()

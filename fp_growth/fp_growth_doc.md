@@ -28,6 +28,25 @@ solutions = fp_growth(T,3)
 
 Note that this is extremely simple. You get your data set, which has to be a list of transactions, and you simply call the `fp_growth()` function with the data set and a threshold of 3. Again, this is extremely simplistic and not necessarily the function you wanna use. I recommend reading further for those advanced functions.
 
+### FrequentItemsetMiner Object - Basic Use-Case
+
+You can use the FrequentItemsetMiner object for fim as well if your data set is already discrete, like so:
+
+```python
+T = [[1,1,0,1,1],
+    [0,1,1,0,1],
+    [1,1,0,1,1],
+    [1,1,1,0,1],
+    [1,1,1,1,1],
+    [0,1,1,1,0]]
+fim = FrequentItemsetMiner()
+fim.initialize(T)
+solutions = fim.run([2,3,4])
+print(solutions)
+```
+
+If you do not pass in a discretization function, the FrequentItemsetMiner simply uses the given dataset for its calculations and treats it as discrete.
+
 ### Discretizing Data
 
 The more advanced functions can be performed using the FrequentItemsetMiner object. One of the things that it can do is discretization.
