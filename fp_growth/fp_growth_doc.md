@@ -51,10 +51,10 @@ def discretize_on_avg(column):
 	return [high_column, low_column]
 ```
 
-Now we can use that function to initialize our FrequentItemsetMiner object:
+Now we can use that function (this one is actually implemented in fp_growth for your convenience) to initialize our FrequentItemsetMiner object:
 
 ```python
-from fp_growth import FrequentItemsetMiner
+from fp_growth import FrequentItemsetMiner, discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner()
@@ -66,7 +66,7 @@ The `initialize()` function on the FrequentItemsetMiner object returns the discr
 You do not have to receive the value returned from `initialize()` and can get the discretized data at any time after the initialization step by accessing the `discretized_transactions` value of your FrequentItemsetMiner instance, like so:
 
 ```python
-from fp_growth import FrequentItemsetMiner
+from fp_growth import FrequentItemsetMiner, discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner()
@@ -81,7 +81,7 @@ But how do we use the FrequentItemsetMiner for efficient data mining? Well, that
 To get all the frequent itemsets for each threshold with duplicates and all, you can do the following:
 
 ```python
-from fp_growth import FrequentItemsetMiner
+from fp_growth import FrequentItemsetMiner, discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner()
@@ -101,7 +101,7 @@ The numbers inside the tuples are the indices of the items that are part of the 
 If we do not want duplicates, we can use the following approach:
 
 ```python
-from fp_growth import FrequentItemsetMiner
+from fp_growth import FrequentItemsetMiner, discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner(duplicate_solutions=False)
