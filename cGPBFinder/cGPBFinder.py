@@ -1,6 +1,5 @@
 import csv
 import math
-import numpy as np
 
 class cGBPFinder():
 	__dict = {}
