@@ -1,7 +1,7 @@
 import csv
 import math
 
-class cGBPFinder():
+class cgpb_finder():
 	__dict = {}
 	def __read(self,file):
                 rows = []
@@ -18,6 +18,7 @@ class cGBPFinder():
 
 		# read clinical data and mark the liveliness...
 		rows = self.__read(file_clinic)
+		print(rows)
 		for row in rows[1:]:
 			patient = row[0]
 			alive = row[1]
@@ -25,10 +26,10 @@ class cGBPFinder():
 				for protein in self.__dict[patient].keys():
 					self.__dict[patient][protein][1] = 1
 
-	def getDictionary(self):
+	def get_dictionary(self):
 		return self.__dict
 
-	def __getInstanceCount(self,freq_set):
+	def __get_instance_count(self,freq_set):
 		expressed_and_alive = 0
 		expressed_and_dead  = 0
 		expressed = 0
@@ -64,7 +65,7 @@ class cGBPFinder():
 		"unexpressed and alive":unexpressed_and_alive, "unexpressed and dead":unexpressed_and_dead, "unexpressed":unexpressed}
 
 	
-	def __twoProportionsZTest(self,count):
+	def __two_proportions_z_test(self,count):
 		p_1 = float(count["expressed and alive"])/float(count["expressed"])
 		p_2 = float(count["unexpressed and alive"])/float(count["unexpressed"])
 		p   = (float(count["expressed and alive"])+float(count["unexpressed and alive"])) \
@@ -72,15 +73,21 @@ class cGBPFinder():
 		z_score = ((p_1-p_2)-0.0)/(math.sqrt(p*(1.0-p)*(1/float(count["expressed"])+1/float(count["unexpressed"]))))
 		return z_score
 
-	def confirmcGPB(self,freq_set):
-		count = self.__getInstanceCount(freq_set)
-		z_score = self.__twoProportionsZTest(count)
+	def confirm_cgpb(self,freq_set):
+		count = self.__get_instance_count(freq_set)
+		z_score = self.__two_proportions_z_test(count)
 		if(-1.96 <= z_score <= 1.96):
 			return {"z-score":z_score,"statistically different?": True}
 		else:
 			return {"z-score":z_score,"statistically different?": False}
 		
+class cgpb_finder_test():
+	# integeration test (only test we need...)
+	# use the test data for which we know the result...
+	def test_confirm_cgpb():
+		finder = cgpb_inder('input_clinic.tsv','input_expr.tsv')
+		assert(finder.confirm_cgpb(['p1','p2'])== {"z-score":1.138550085106622, "statistically different?": True})
+	
+#finder = cgpb_finder('input_clinic.tsv','input_expr.tsv')
+#assert(finder.confirm_cgpb(['p1','p2'])== {"z-score":1.138550085106622, "statistically different?": True})
 
-finder = cGBPFinder('input_clinic.tsv','input_expr.tsv')
-print(finder.getDictionary())
-print(finder.confirmcGPB(['p1','p2']))
