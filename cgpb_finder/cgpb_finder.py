@@ -3,28 +3,50 @@ import math
 
 class cgpb_finder():
 	__dict = {}
-	def __read(self,file):
-                rows = []
-		with open(file, 'r') as f:
-                        reader = csv.reader(f, dialect='excel', delimiter='\t')
-                        for row in reader:
-                                rows.append(row)
-                return rows
 
-	def __init__(self,file_clinic,file_expr):
+	def __init__(self,dict):
+		self.__dict = dict
+
+	@classmethod
+	def __read(self,file):
+		rows = []
+		with open(file, 'r') as f:
+			reader = csv.reader(f, dialect='excel', delimiter='\t')
+			for row in reader:
+				rows.append(row)
+		return rows
+
+	@classmethod
+	def from_files(cls,file_clinic,file_expr):
 		# read transcation data into dictionary
-		rows = self.__read(file_expr)
-		self.__dict = { row[0]:{rows[0][i]:[row[i],0] for i in range(1,len(rows[0]))} for row in rows[1:] }
+		rows = cls.__read(file_expr)
+		dict = { row[0]:{rows[0][i]:[row[i],0] for i in range(1,len(rows[0]))} for row in rows[1:] }
 
 		# read clinical data and mark the liveliness...
-		rows = self.__read(file_clinic)
+		rows = cls.__read(file_clinic)
 		print(rows)
 		for row in rows[1:]:
 			patient = row[0]
 			alive = row[1]
-			if patient in self.__dict and alive == "LIVING":
-				for protein in self.__dict[patient].keys():
-					self.__dict[patient][protein][1] = 1
+			if patient in dict and alive == "LIVING":
+				for protein in dict[patient].keys():
+					dict[patient][protein][1] = 1
+		return cls(dict)
+
+
+	@classmethod
+	def from_tables(cls,table_clinic,table_expr):
+		rows = table_expr
+		dict = { row[0]:{rows[0][i]:[row[i],0] for i in range(1,len(rows[0]))} for row in rows[1:] }
+		
+		rows = table_clinic
+		for row in rows[1:]:
+			patient = row[0]
+			alive = row[1]
+			if patient in dict and alive == "LIVING":
+				for protein in dict[patient].keys():
+					dict[patient][protein][1] = 1
+		return cls(dict)
 
 	def get_dictionary(self):
 		return self.__dict
@@ -82,12 +104,24 @@ class cgpb_finder():
 			return {"z-score":z_score,"statistically different?": False}
 		
 class cgpb_finder_test():
-	# integeration test (only test we need...)
+	# integeration test
 	# use the test data for which we know the result...
 	def test_confirm_cgpb():
-		finder = cgpb_inder('input_clinic.tsv','input_expr.tsv')
+		finder = cgpb_finder.from_files('input_clinic.tsv','input_expr.tsv')
 		assert(finder.confirm_cgpb(['p1','p2'])== {"z-score":1.138550085106622, "statistically different?": True})
 	
-#finder = cgpb_finder('input_clinic.tsv','input_expr.tsv')
-#assert(finder.confirm_cgpb(['p1','p2'])== {"z-score":1.138550085106622, "statistically different?": True})
+	# unit tests
+	def test_two_proportions_z_test(self,count):
+		print("-")
 
+	def test_get_instance_count(self,freq_set):
+		print("-")
+
+	def test_constructor_from_file(file_clinic,file_expr):
+		print("-")
+
+	def test_constructor_from_table(table_clinic,table_expr):
+		print("-")
+
+#finder = cgpb_finder.from_files('input_clinic.tsv','input_expr.tsv')
+#assert(finder.confirm_cgpb(['p1','p2'])== {"z-score":1.138550085106622, "statistically different?": True})
