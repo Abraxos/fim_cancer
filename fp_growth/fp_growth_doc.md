@@ -51,7 +51,7 @@ If you do not pass in a discretization function, the FrequentItemsetMiner simply
 
 The more advanced functions can be performed using the FrequentItemsetMiner object. One of the things that it can do is discretization.
 
-Sometimes we have a set of floating point data instead of discrete data. In this case, a a discretization function is required for the FrequentItemsetMiner object to be able to get the number of frequent itemsets. You need to define this function. The only requirement is that the function take one parameter, a column of data, and return a list of columns of data based on the input column.
+Sometimes we have a set of floating point data instead of discrete data. In this case, a a discretization function is required for the FrequentItemsetMiner object to be able to get the number of frequent itemsets. You need to define this function. The only requirement is that the function take one parameter, a column of data, and return a list of columns of data based on the input column. The function can optionally take a column name parameter as well which is described in the next subsection. Take note that if you make a discretized function without a name parameter you can never use it with a named data set.
 
 For example, let's say we have a very simple floating point data set that we wish to turn into 0s and 1s based on the average as the dividing line. We can write the following discretization function:
 
@@ -77,10 +77,10 @@ from fp_growth import FrequentItemsetMiner, discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner()
-discretized_data = fim.initialize(T,discretize_on_avg)
+discretized_data = fim.initialize(T, discretization_function=discretize_on_avg)
 ```
 
-The `initialize()` function on the FrequentItemsetMiner object returns the discretized version of T, which is the data that results from discretizing T with the given discretization function.
+The `initialize()` function on the FrequentItemsetMiner object returns the discretized version of T, which is the data that results from discretizing T with the given discretization function. Note that you have to specify the discretization function parameter.
 
 You do not have to receive the value returned from `initialize()` and can get the discretized data at any time after the initialization step by accessing the `discretized_transactions` value of your FrequentItemsetMiner instance, like so:
 
@@ -89,9 +89,34 @@ from fp_growth import FrequentItemsetMiner, discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner()
-fim.initialize(T,discretize_on_avg)
+fim.initialize(T, discretization_function=discretize_on_avg)
 print(fim.discretized_transactions)
 ```
+
+#### Discretizing Data With Names
+
+Sometimes it becomes necessary for us to name columns and much more convenient to deal with them as strings rather than integers. In this case, we can write our discretization function like so:
+
+```
+def discretize_on_avg(column, name=None):
+	name = name if name else None
+	avg = float(sum(column)) / len(column)
+	high_column = []
+	low_column = []
+	for c in column:
+		if c >= avg:
+			high_column.append(1)
+			low_column.append(0)
+		else:
+			high_column.append(0)
+			low_column.append(1)
+	if name:
+		return [high_column, low_column],[name + '_high', name + '_low']
+	else:
+		return [high_column, low_column]
+```
+
+Note that if a name is given, the function will output two arrays of the same size, one with the columns, and the other with the names.
 
 ### Frequent Itemset Mining
 
@@ -104,7 +129,7 @@ from fp_growth import FrequentItemsetMiner, discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner()
-fim.initialize(T,discretize_on_avg)
+fim.initialize(T, discretization_function=discretize_on_avg)
 solutions = fim.run([4,5,6])
 print(solutions)
 ```
@@ -120,11 +145,11 @@ The numbers inside the tuples are the indices of the items that are part of the 
 If we do not want duplicates, we can use the following approach:
 
 ```python
-from fp_growth import FrequentItemsetMiner, discretize_on_avg
+from fp_growth import FrequentItemsetMiner,discretize_on_avg
 
 T = [...]
 fim = FrequentItemsetMiner(duplicate_solutions=False)
-fim.initialize(T,discretize_on_avg)
+fim.initialize(T, discretization_function=discretize_on_avg)
 solutions = fim.run([4,5,6])
 print(solutions)
 ```
@@ -136,3 +161,22 @@ Now that we have set `duplicate_solutions` set to `False` the output (in the sam
 ```
 
 Note that the frequent itemset `16` (containing only the item 16) should appear for thresholds 4 and 5 because if it appears at least 5 times then it appears 4 times as well. However, here, it only appears at the maximum associated threshold which happens to be 5.
+
+#### Frequent Itemset Mining With Names
+
+As mentioned before, sometimes it becomes necessary to include names for Frequent Itemset Mining. To do this, simply follow this example:
+
+```python
+N = ['Protein_1','Protein_2','Protein_3','Protein_4','Protein_5','Protein_6','Protein_7','Protein_8','Protein_9','Protein_10']
+	T = [...]
+	fim = FrequentItemsetMiner(duplicate_solutions=False)
+	fim.initialize(T, names=N, discretization_function=discretize_on_avg)
+	solutions = fim.run([4,5,6])
+	print(solutions)
+```
+
+Note that the output in this case will be of the same general format as the solutions above, except that instead of item indices, you will get the column names based on the discretization function:
+
+```python
+{4: [('Protein_9_high', 'Protein_1_high'), ('Protein_1_high',), ('Protein_7_high', 'Protein_1_high'), ('Protein_9_high', 'Protein_5_low'), ('Protein_6_low', 'Protein_3_low'), ('Protein_2_low',), ('Protein_6_low', 'Protein_2_low'), ('Protein_5_low',), ('Protein_3_low',), ('Protein_4_high',), ('Protein_7_high',), ('Protein_10_low',), ('Protein_8_high',), ('Protein_6_low', 'Protein_4_high'), ('Protein_9_high', 'Protein_7_high')], 5: [('Protein_9_high',), ('Protein_6_low',)], 6: [()]}
+```
