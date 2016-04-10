@@ -122,6 +122,3 @@ class cgpb_finder_test():
 
 	def test_constructor_from_table(table_clinic,table_expr):
 		print("-")
-
-#finder = cgpb_finder.from_files('input_clinic.tsv','input_expr.tsv')
-#assert(finder.confirm_cgpb(['p1','p2'])== {"z-score":1.138550085106622, "statistically different?": True})
