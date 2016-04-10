@@ -97,7 +97,7 @@ print(fim.discretized_transactions)
 
 Sometimes it becomes necessary for us to name columns and much more convenient to deal with them as strings rather than integers. In this case, we can write our discretization function like so:
 
-```
+```python
 def discretize_on_avg(column, name=None):
 	name = name if name else None
 	avg = float(sum(column)) / len(column)
@@ -167,7 +167,7 @@ Note that the frequent itemset `16` (containing only the item 16) should appear 
 As mentioned before, sometimes it becomes necessary to include names for Frequent Itemset Mining. To do this, simply follow this example:
 
 ```python
-N = ['Protein_1','Protein_2','Protein_3','Protein_4','Protein_5','Protein_6','Protein_7','Protein_8','Protein_9','Protein_10']
+    N = ['Protein_1','Protein_2','Protein_3','Protein_4','Protein_5','Protein_6','Protein_7','Protein_8','Protein_9','Protein_10']
 	T = [...]
 	fim = FrequentItemsetMiner(duplicate_solutions=False)
 	fim.initialize(T, names=N, discretization_function=discretize_on_avg)
