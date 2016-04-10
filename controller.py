@@ -84,7 +84,7 @@ class controller():
 						ranks.append(finder.confirm_cgpb(freq_set))
 		else:
 			for freq_set in override_set:
-				if(len(freq_set))>0):
+				if(len(freq_set)>0):
 					ranks.append(finder.confirm_cgpb(freq_set))		
 
 class controller_test():
@@ -112,3 +112,5 @@ class controller_test():
 
 	def test_read():
 		print("-")
+
+c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',[4])
