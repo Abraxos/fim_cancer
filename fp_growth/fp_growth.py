@@ -105,6 +105,7 @@ class FPHeader(object):
 		self.support = 0
 		self.conditional_support = 0
 		self.nodes = []
+                self.something something something dark side...
 		self.num_items = self.tree.num_items
 	
 	def add_node(self, node):
