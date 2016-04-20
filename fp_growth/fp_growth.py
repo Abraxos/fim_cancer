@@ -235,6 +235,12 @@ def fp_growth(transactions, threshold):
 		stack.pop()
 	return solutions
 
+class NameMismatchError(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
 class FrequentItemsetMiner(object):
 	def __init__(self, duplicate_solutions=True):
 		self.discretization_function = None
@@ -242,22 +248,38 @@ class FrequentItemsetMiner(object):
 		self.discretized_transactions = None
 		self.duplicate_solutions = duplicate_solutions
 		self.thresholds = None
+		self.names = None
+		self.discretized_names = None
 
-	def initialize(self, transactions, discretization_function=None):
+	def initialize(self, transactions, names=None, discretization_function=None):
+		if names and len(transactions[0]) != len(names):
+			raise NameMismatchError('The number of columns does not match the set of names provided!')
+		self.names = names
 		discretized_columns = []
+		self.discretized_names = []
 		self.discretized_transactions = []
 		self.transactions = transactions
 		self.discretization_function = discretization_function
 		if self.discretization_function:
 			for c in range(len(transactions[0])):
 				column = [row[c] for row in transactions]
-				discretized_columns.extend(self.discretization_function(column))
+				name = None if not names else names[c]
+				if name:
+					C, N = self.discretization_function(column,name)
+					self.discretized_names.extend(N)
+				else:
+					C = self.discretization_function(column)
+				discretized_columns.extend(C)
 			for r in range(len(discretized_columns[0])):
 				discretized_transaction = [dc[r] for dc in discretized_columns]
 				self.discretized_transactions.append(discretized_transaction)
 		else:
 			self.discretized_transactions = self.transactions
-		return self.discretized_transactions
+			self.discretized_names = self.names
+		if names is not None:
+			return self.discretized_transactions, self.discretized_names
+		else:
+			return self.discretized_transactions
 	
 	def run(self, thresholds):
 		solutions = {}
@@ -268,7 +290,6 @@ class FrequentItemsetMiner(object):
 				S = solutions[threshold]
 				for i in range(len(S)):
 					S[i] = ts = tuple(sorted(S[i], reverse=True))
-			return solutions
 		else:
 			solutions_to_thresholds = {}
 			solutions = {}
@@ -285,9 +306,18 @@ class FrequentItemsetMiner(object):
 				if threshold not in solutions:
 					solutions[threshold] = []
 				solutions[threshold].append(solution)
-			return solutions
+		if self.discretized_names:
+			named_solutions = {}
+			for threshold in solutions:
+				named_solutions[threshold] = []
+				for itemset in solutions[threshold]:
+					s = tuple([self.discretized_names[item] for item in itemset])
+					named_solutions[threshold].append(s)
+			solutions = named_solutions
+		return solutions
 
-def discretize_on_avg(column):
+def discretize_on_avg(column, name=None):
+	name = name if name else None
 	avg = float(sum(column)) / len(column)
 	high_column = []
 	low_column = []
@@ -298,7 +328,10 @@ def discretize_on_avg(column):
 		else:
 			high_column.append(0)
 			low_column.append(1)
-	return [high_column, low_column]
+	if name:
+		return [high_column, low_column],[name + '_high', name + '_low']
+	else:
+		return [high_column, low_column]
 
 def test_tree_building():
 	T = [[1,1,0,1,1],[0,1,1,0,1],[1,1,0,1,1],[1,1,1,0,1],[1,1,1,1,1],[0,1,1,1,0]]
@@ -342,7 +375,22 @@ def test_discretization():
 		[0.12476789340926919, 0.5969183016501332, 0.06042387645642078, 0.7180925227765411, 0.44410467786968777, 0.26541743459645484, 0.24403295721739093, 0.07228615874344724, 0.810960766284046, 0.5529050776232424],
 		[0.7472370029484009, 0.8613403855167118, 0.4762109730740388, 0.7704518640065161, 0.16221403205506535, 0.22429338351371442, 0.9530617890253003, 0.3575790300741385, 0.8802749530675757, 0.6333662233864481]]
 	fim = FrequentItemsetMiner()
-	discretized_data = fim.initialize(T,discretize_on_avg)
+	discretized_data = fim.initialize(T,discretization_function=discretize_on_avg)
+	for r in discretized_data:
+		print(r)
+
+def test_discretization_with_names():
+	N = ['Protein_1','Protein_2','Protein_3','Protein_4','Protein_5','Protein_6','Protein_7','Protein_8','Protein_9','Protein_10']
+	T = [[0.0749417049434653, 0.47955356469803334, 0.3003988003726794, 0.43098345314354636, 0.6214806456348348, 0.23950080880342106, 0.19368804850236376, 0.3099796805878434, 0.3372493874497201, 0.9638462398347232],
+		[0.7041122457976033, 0.18374838591247133, 0.4321317486192555, 0.679356838110222, 0.2892176951157458, 0.3954409838738262, 0.9809593890458055, 0.6506815438103337, 0.9457975825867121, 0.09815536072771014],
+		[0.9737472315421025, 0.7004632055256557, 0.7556385565428755, 0.22886499720331654, 0.4332049099410554, 0.8772439106456966, 0.8963844709187757, 0.6180246674366953, 0.8578656711255255, 0.30779868374984365],
+		[0.050289925908512334, 0.5424980114115222, 0.8307928045014382, 0.6735869327039641, 0.5887357499768487, 0.19323753261032395, 0.4507479080892529, 0.004924981715803356, 0.027606789663687903, 0.024606253039842207],
+		[0.834222994909624, 0.9419631024781285, 0.6499191080001684, 0.4287399883329528, 0.9643981803865654, 0.9006420891536407, 0.6808111670711892, 0.0874135568317912, 0.8140352351417328, 0.0699549310534322],
+		[0.12476789340926919, 0.5969183016501332, 0.06042387645642078, 0.7180925227765411, 0.44410467786968777, 0.26541743459645484, 0.24403295721739093, 0.07228615874344724, 0.810960766284046, 0.5529050776232424],
+		[0.7472370029484009, 0.8613403855167118, 0.4762109730740388, 0.7704518640065161, 0.16221403205506535, 0.22429338351371442, 0.9530617890253003, 0.3575790300741385, 0.8802749530675757, 0.6333662233864481]]
+	fim = FrequentItemsetMiner()
+	discretized_data, discretized_names = fim.initialize(T,names = N, discretization_function=discretize_on_avg)
+	print(discretized_names)
 	for r in discretized_data:
 		print(r)
 
@@ -367,7 +415,7 @@ def test_fim_with_duplicates():
 		[0.12476789340926919, 0.5969183016501332, 0.06042387645642078, 0.7180925227765411, 0.44410467786968777, 0.26541743459645484, 0.24403295721739093, 0.07228615874344724, 0.810960766284046, 0.5529050776232424],
 		[0.7472370029484009, 0.8613403855167118, 0.4762109730740388, 0.7704518640065161, 0.16221403205506535, 0.22429338351371442, 0.9530617890253003, 0.3575790300741385, 0.8802749530675757, 0.6333662233864481]]
 	fim = FrequentItemsetMiner()
-	fim.initialize(T,discretize_on_avg)
+	fim.initialize(T,discretization_function=discretize_on_avg)
 	solutions = fim.run([4,5,6])
 	print(solutions)
 
@@ -380,7 +428,35 @@ def test_fim_without_duplicates():
 		[0.12476789340926919, 0.5969183016501332, 0.06042387645642078, 0.7180925227765411, 0.44410467786968777, 0.26541743459645484, 0.24403295721739093, 0.07228615874344724, 0.810960766284046, 0.5529050776232424],
 		[0.7472370029484009, 0.8613403855167118, 0.4762109730740388, 0.7704518640065161, 0.16221403205506535, 0.22429338351371442, 0.9530617890253003, 0.3575790300741385, 0.8802749530675757, 0.6333662233864481]]
 	fim = FrequentItemsetMiner(duplicate_solutions=False)
-	fim.initialize(T,discretize_on_avg)
+	fim.initialize(T,discretization_function=discretize_on_avg)
+	solutions = fim.run([4,5,6])
+	print(solutions)
+
+def test_fim_with_duplicates_and_names():
+	N = ['Protein_1','Protein_2','Protein_3','Protein_4','Protein_5','Protein_6','Protein_7','Protein_8','Protein_9','Protein_10']
+	T = [[0.0749417049434653, 0.47955356469803334, 0.3003988003726794, 0.43098345314354636, 0.6214806456348348, 0.23950080880342106, 0.19368804850236376, 0.3099796805878434, 0.3372493874497201, 0.9638462398347232],
+		[0.7041122457976033, 0.18374838591247133, 0.4321317486192555, 0.679356838110222, 0.2892176951157458, 0.3954409838738262, 0.9809593890458055, 0.6506815438103337, 0.9457975825867121, 0.09815536072771014],
+		[0.9737472315421025, 0.7004632055256557, 0.7556385565428755, 0.22886499720331654, 0.4332049099410554, 0.8772439106456966, 0.8963844709187757, 0.6180246674366953, 0.8578656711255255, 0.30779868374984365],
+		[0.050289925908512334, 0.5424980114115222, 0.8307928045014382, 0.6735869327039641, 0.5887357499768487, 0.19323753261032395, 0.4507479080892529, 0.004924981715803356, 0.027606789663687903, 0.024606253039842207],
+		[0.834222994909624, 0.9419631024781285, 0.6499191080001684, 0.4287399883329528, 0.9643981803865654, 0.9006420891536407, 0.6808111670711892, 0.0874135568317912, 0.8140352351417328, 0.0699549310534322],
+		[0.12476789340926919, 0.5969183016501332, 0.06042387645642078, 0.7180925227765411, 0.44410467786968777, 0.26541743459645484, 0.24403295721739093, 0.07228615874344724, 0.810960766284046, 0.5529050776232424],
+		[0.7472370029484009, 0.8613403855167118, 0.4762109730740388, 0.7704518640065161, 0.16221403205506535, 0.22429338351371442, 0.9530617890253003, 0.3575790300741385, 0.8802749530675757, 0.6333662233864481]]
+	fim = FrequentItemsetMiner()
+	fim.initialize(T, names=N, discretization_function=discretize_on_avg)
+	solutions = fim.run([4,5,6])
+	print(solutions)
+
+def test_fim_without_duplicates_and_names():
+	N = ['Protein_1','Protein_2','Protein_3','Protein_4','Protein_5','Protein_6','Protein_7','Protein_8','Protein_9','Protein_10']
+	T = [[0.0749417049434653, 0.47955356469803334, 0.3003988003726794, 0.43098345314354636, 0.6214806456348348, 0.23950080880342106, 0.19368804850236376, 0.3099796805878434, 0.3372493874497201, 0.9638462398347232],
+		[0.7041122457976033, 0.18374838591247133, 0.4321317486192555, 0.679356838110222, 0.2892176951157458, 0.3954409838738262, 0.9809593890458055, 0.6506815438103337, 0.9457975825867121, 0.09815536072771014],
+		[0.9737472315421025, 0.7004632055256557, 0.7556385565428755, 0.22886499720331654, 0.4332049099410554, 0.8772439106456966, 0.8963844709187757, 0.6180246674366953, 0.8578656711255255, 0.30779868374984365],
+		[0.050289925908512334, 0.5424980114115222, 0.8307928045014382, 0.6735869327039641, 0.5887357499768487, 0.19323753261032395, 0.4507479080892529, 0.004924981715803356, 0.027606789663687903, 0.024606253039842207],
+		[0.834222994909624, 0.9419631024781285, 0.6499191080001684, 0.4287399883329528, 0.9643981803865654, 0.9006420891536407, 0.6808111670711892, 0.0874135568317912, 0.8140352351417328, 0.0699549310534322],
+		[0.12476789340926919, 0.5969183016501332, 0.06042387645642078, 0.7180925227765411, 0.44410467786968777, 0.26541743459645484, 0.24403295721739093, 0.07228615874344724, 0.810960766284046, 0.5529050776232424],
+		[0.7472370029484009, 0.8613403855167118, 0.4762109730740388, 0.7704518640065161, 0.16221403205506535, 0.22429338351371442, 0.9530617890253003, 0.3575790300741385, 0.8802749530675757, 0.6333662233864481]]
+	fim = FrequentItemsetMiner(duplicate_solutions=False)
+	fim.initialize(T, names=N, discretization_function=discretize_on_avg)
 	solutions = fim.run([4,5,6])
 	print(solutions)
 
@@ -389,9 +465,13 @@ if __name__ == "__main__":
 	test_projection()
 	test_fp_growth()
 	test_discretization()
+	test_discretization_with_names()
 	print("WITH DUPLICATES:")
 	test_fim_with_duplicates()
 	print("WITHOUT DUPLICATES:")
 	test_fim_without_duplicates()
 	print("BASIC")
 	test_basic_fim()
+	print("WITH NAMES")
+	test_fim_with_duplicates_and_names()
+	test_fim_without_duplicates_and_names()
