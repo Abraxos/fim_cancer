@@ -83,21 +83,20 @@ class controller():
 
 	def __init__(self,file_expr,file_clinic,thresholds,override_set=None):
 		print("starting...")
-		print("controller - pulling transaction data(1)...")
+		print("controller - pulling transaction data...")
 		res =  self.__pull_transaction_data(file_expr)
+		
 		print("controller - produce clinical and non discretized expression table")
 		clinic_table = self.__produce_clinical_table(file_clinic)
-		express_table = self.__produce_expression_table(res['transactions'],res['proteins'],res['patients'])
+		express_table = self.__produce_expression_table(group,res['proteins'],res['patients'])
 		
 		print("preliminary finder - start")
 		groups = self.__preliminary_find(clinic_table,express_table)
 
-		print("controller - pulling transaction data(2)...")
-                res =  self.__pull_transaction_data(file_expr)
 		for i,group in enumerate(groups):
 			print("fim - start")
 			fim = fp_growth.FrequentItemsetMiner()
-			fim.initialize(group,fp_growth.discretize_on_avg)
+			fim.initialize(res['transactions'],fp_growth.discretize_on_avg)
 			proteins = self.__expand_proteins(res['proteins'],fim.discretized_transactions)
 
 			print("fim - finding solutions...")
@@ -166,5 +165,5 @@ class controller_test():
 	def test_read():
 		print("-")
 
-c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',range(15,30))
+c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',range(20,50))
 #c = controller('examples/data/TCGA-THCA-L3-S54.csv','examples/data/thca_tcga_clinical_Data.tsv',[20])

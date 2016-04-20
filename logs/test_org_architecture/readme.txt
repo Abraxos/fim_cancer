@@ -1,0 +1,5 @@
+--NOTES--
+-The following test was ran on the reduced table.
+-It was ran for threshold 15-30, it returned freq_item sets for 15 to 27... indicating we proubably don't need to search past a thresh of 30.
+-A good lower bound is still to be determined.
+-For the actual full size table, the result is never gotten as the program never finishes.

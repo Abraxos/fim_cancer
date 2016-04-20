@@ -1,0 +1,7 @@
+-NOTES-
+-The test was ran on an altered version of the architecture as presented in the progress report.
+-We now do a split between living and dead cases
+-Then run our instance of fim and cgpbfinder, on these two seperate groups. The cgpbfinder will do significance metric test 
+--- on living and expressed vs. living and non-expressed. (group_alive)
+--- on dead and expressed vs. dead and nonexpressed. (group_dead)
+-Doesn't return any sets for group_dead, need to check that...
