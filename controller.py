@@ -109,7 +109,7 @@ class controller():
 			print(group)
 			print("fim - start")
 			fim = fp_growth.FrequentItemsetMiner()
-			fim.initialize(group,fp_growth.discretize_on_avg)
+			fim.initialize(group,discretization_function=fp_growth.discretize_on_avg)
 			proteins = self.__expand_proteins(res['proteins'],fim.discretized_transactions)
 
 			print("fim - finding solutions...")
