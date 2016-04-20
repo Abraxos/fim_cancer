@@ -461,18 +461,41 @@ def test_fim_without_duplicates_and_names():
 	solutions = fim.run([4,5,6])
 	print(solutions)
 
+def test_actual_data():
+	file_path = '../examples/data/TCGA-THCA-L3-S54.csv'
+	D = []
+	with open(file_path,'r') as data_file:
+		for line in data_file:
+			D.append(line.split(','))
+	D = [row[2:] for row in D]
+	for row in D:
+		assert(len(row) == len(D[0]))
+	print("Length assertions passed!")
+
+	N = D[0]
+	T = [[float(cell) for cell in row] for row in D[1:]]
+
+	fim = FrequentItemsetMiner(duplicate_solutions=False)
+	fim.initialize(T, names=N, discretization_function=discretize_on_avg)
+	print("Running frequent itemset miner")
+	solutions = fim.run(list(range(50,226)))
+	print("Done")
+	for threshold in solutions:
+		print("THRESHOLD: {0} NUM SOLUTIONS: {1}".format(threshold,len(solutions[threshold])))
+
 if __name__ == "__main__":
-	test_tree_building()
-	test_projection()
-	test_fp_growth()
-	test_discretization()
-	test_discretization_with_names()
-	print("WITH DUPLICATES:")
-	test_fim_with_duplicates()
-	print("WITHOUT DUPLICATES:")
-	test_fim_without_duplicates()
-	print("BASIC")
-	test_basic_fim()
-	print("WITH NAMES")
-	test_fim_with_duplicates_and_names()
-	test_fim_without_duplicates_and_names()
+	# test_tree_building()
+	# test_projection()
+	# test_fp_growth()
+	# test_discretization()
+	# test_discretization_with_names()
+	# print("WITH DUPLICATES:")
+	# test_fim_with_duplicates()
+	# print("WITHOUT DUPLICATES:")
+	# test_fim_without_duplicates()
+	# print("BASIC")
+	# test_basic_fim()
+	# print("WITH NAMES")
+	# test_fim_with_duplicates_and_names()
+	# test_fim_without_duplicates_and_names()
+	test_actual_data()
