@@ -81,7 +81,7 @@ class controller():
 				dead_transactions.append(dead_transaction)
 		return [alive_transactions,dead_transactions]
 
-	def __init__(self,file_expr,file_clinic,thresholds,override_set=None):
+	def __init__(self,file_expr,file_clinic,thresholds_alive,thresholds_dead,override_set=None):
 		print("starting...")
 		print("controller - pulling transaction data(1)...")
 		res =  self.__pull_transaction_data(file_expr)
@@ -95,6 +95,18 @@ class controller():
 		print("controller - pulling transaction data(2)...")
                 res =  self.__pull_transaction_data(file_expr)
 		for i,group in enumerate(groups):
+			thresholds = []
+			if i == 0:
+				status = True
+				filename = "ranks_for_alive.txt"
+				thresholds = thresholds_alive
+			else:
+				thresholds = thresholds_dead
+				filename = "ranks_for_dead.txt"
+				status = False
+
+			print('this is group ' + str(i)) 
+			print(group)
 			print("fim - start")
 			fim = fp_growth.FrequentItemsetMiner()
 			fim.initialize(group,fp_growth.discretize_on_avg)
@@ -112,13 +124,6 @@ class controller():
 			print("finder - start")
 			finder = cgpb_finder.cgpb_finder.from_tables(clinic_table,express_table)
 			ranks = []
-
-			if i == 0:
-				status = True
-				filename = "ranks_for_alive.txt"
-			else:
-				filename = "ranks_for_dead.txt"
-				status = False
 
 			if override_set is None:
 				for idx_t,threshold in enumerate(thresholds):
@@ -166,5 +171,5 @@ class controller_test():
 	def test_read():
 		print("-")
 
-c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',range(15,30))
+c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',range(15,30),range(2,15))
 #c = controller('examples/data/TCGA-THCA-L3-S54.csv','examples/data/thca_tcga_clinical_Data.tsv',[20])

@@ -4,4 +4,5 @@
 -Then run our instance of fim and cgpbfinder, on these two seperate groups. The cgpbfinder will do significance metric test 
 --- on living and expressed vs. living and non-expressed. (group_alive)
 --- on dead and expressed vs. dead and nonexpressed. (group_dead)
--Doesn't return any sets for group_dead, need to check that...
+-Doesn't return any sets for group_dead, need to check that... okay. It's happening because that group is very small, 
+-need to check different thresholds for two groups.
