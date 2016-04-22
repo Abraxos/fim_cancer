@@ -63,15 +63,17 @@ class controller():
 				solutions_actual[threshold].append(l)	
 		return solutions_actual
 		
-	def __init__(self,file_expr,file_clinic,thresholds,status,clinic_attr,override_set=None):
+	def __init__(self,file_expr,file_clinic,thresholds,status,clinic_attr,discrete_func,override_set=None):
 	
 		print("controller - pulling transactions")
 		res =  self.__pull_transaction_data(file_expr)
 				
 		print("controller initalizing fim")
 		fim = fp_growth.FrequentItemsetMiner(duplicate_solutions=False)
-		fim.initialize(res['transactions'],discretization_function=fp_growth.discretize_on_avg)
-		
+		fim.initialize(res['transactions'],discretization_function=discrete_func)
+
+		print(fim.discretized_transactions)
+
 		print("controller - expanding proteins list")
 		proteins = self.__expand_proteins(res['proteins'],fim.discretized_transactions)
 		
@@ -113,9 +115,9 @@ class controller():
 class controller_test():
 	# integration tests
 	def test_constructor_with_override():
-		c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',[4])
+		print("-")
 	def test_constructor_without_override():
-		c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',[4])
+		print("-")
 
 	# unit tests
 	def test_convert_indexs_to_actuals():
@@ -136,4 +138,55 @@ class controller_test():
 	def test_read():
 		print("-")
 
-c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(65,110),True,'Disease Free Status')
+def discretize_on_avg(column, name=None):
+	name = name if name else None
+	avg = float(sum(column)) / len(column)
+	high_column = []
+	low_column = []
+	for c in column:
+		if c >= avg:
+			high_column.append(1)
+			low_column.append(0)
+		else:
+			high_column.append(0)
+			low_column.append(1)
+	if name:
+		return [high_column, low_column],[name + '_high', name + '_low']
+	else:
+		return [high_column, low_column]
+
+def discretize_on_sd(column, name=None):
+	name = name if name else None
+	avg = float(sum(column)) / len(column)
+	squared = []
+	high_column = []
+	mid_column = []
+	low_column = []
+
+	for entry in column:
+		squared.append(entry ** 2)
+
+	variance = float(sum(squared))/len(column)
+	standard_deviation = variance ** .5
+	max_sd = avg + standard_deviation
+	min_sd = avg - standard_deviation
+	for c in column:
+		if c >= max_sd:
+			high_column.append(1)
+			mid_column.append(0)
+			low_column.append(0)
+		elif c <= min_sd:
+            		high_column.append(0)
+			mid_column.append(0)
+            		low_column.append(1)
+		else:
+			high_column.append(0)
+			mid_column.append(1)
+			low_column.append(0)
+
+	if name:
+		return [high_column, mid_column, low_column],[name + '_high', name + '_mid', name + '_low']
+	else:
+		return [high_column, mid_column, low_column]
+
+c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(110,140),False,'Overall Survival Status',discretize_on_sd)
