@@ -11,15 +11,17 @@ class cgpb_finder():
 	def __create_dict(self,e_rows,c_rows):
 		# initialize the dictionary using expression data
 		dict = { row[0]:{e_rows[0][i]:[row[i],0] for i in range(1,len(e_rows[0]))} for row in e_rows[1:] }
-
 		# read clinical data and mark the liveliness...
 		for row in c_rows[1:]:
 			patient = row[0]
 			alive = row[1]
-			if patient in dict and alive == "LIVING":
+			if patient in dict and (alive == "LIVING" or alive == "DiseaseFree"):
 				for protein in dict[patient].keys():
 					dict[patient][protein][1] = 1
-			elif patient in dict and (alive != "LIVING" or alive != "DECEASED"):
+			elif patient in dict and (alive == "DECEASED" or alive == "Recurred/Progressed"):
+				for protein in dict[patient].keys():
+					dict[patient][protein][1] = 0
+			elif patient in dict and (alive != "LIVING" or alive != "DECEASED" or alive != "DiseaseFree" or alive != "Recurred/Progressed"):
 				del dict[patient]
 
 		# dictionary format
@@ -65,6 +67,8 @@ class cgpb_finder():
 		unexpressed_and_alive = 0
 		unexpressed_and_dead  = 0
 		unexpressed = 0
+		alive = 0
+		dead = 0
 		
 		# we search through the dictionary patient-wise first then protein-wise.
 		# we check for each patient whether he/she has the freq_set:
@@ -86,33 +90,44 @@ class cgpb_finder():
 			if(False not in freq_set_contained and patient_alive):
 				expressed_and_alive+=1
 				expressed+=1
+				alive+=1
 			elif(False not in freq_set_contained and not patient_alive):
 				expressed_and_dead+=1
 				expressed+=1
+				dead+=1
 			elif(False in freq_set_contained and patient_alive):
 				unexpressed_and_alive+=1
 				unexpressed+=1
+				alive+=1
 			elif(False in freq_set_contained and not patient_alive):
 				unexpressed_and_dead+=1
 				unexpressed+=1
+				dead+=1
 
-		return {"expressed and alive":expressed_and_alive, "expressed and dead":expressed_and_dead, "expressed":expressed, 
-		"unexpressed and alive":unexpressed_and_alive, "unexpressed and dead":unexpressed_and_dead, "unexpressed":unexpressed}
+		return {"expressed and alive":expressed_and_alive, "expressed and dead":expressed_and_dead, "expressed":expressed, "alive":alive, 
+		"unexpressed and alive":unexpressed_and_alive, "unexpressed and dead":unexpressed_and_dead, "unexpressed":unexpressed, "dead":dead}
 	
 	# the formula for two proportions z test can be found online...
 	def __two_proportions_z_test(self,count,status):
 		if(status == True):
-			x_1 = count["expressed and alive"]
-			x_2 = count["unexpressed and alive"]
+			x_1 = float(count["expressed and alive"])
+			x_2 = float(count["unexpressed and alive"])
+			n_1 = float(count["expressed"])
+			n_2 = float(count["unexpressed"])
+			print(count)
 		else:
-			x_1 = count["expressed and dead"]
-			x_2 = count["unexpressed and dead"]
+			x_1 = float(count["expressed and dead"])
+			x_2 = float(count["unexpressed and dead"])
+			n_1 = float(count["expressed"])
+			n_2 = float(count["unexpressed"])
 
-		p_1 = float(x_1)/float(count["expressed"])
-		p_2 = float(x_2)/float(count["unexpressed"])
-		p   = (float(x_1)+float(x_2)) \
-			/(float(count["expressed"])+float(count["unexpressed"]))
-		z_score = ((p_1-p_2)-0.0)/(math.sqrt(p*(1.0-p)*(1/float(count["expressed"])+1/float(count["unexpressed"]))))
+		p_1 = x_1/n_1
+		p_2 = x_2/n_2
+		p   = (x_1+x_2)/(n_1+n_2)
+		if(p!=1.0):
+			z_score = (p_1-p_2)/(math.sqrt(p*(1.0-p)*(1/n_1+1/n_2)))
+		else:
+			z_score = "no difference between proportions!"
 		return z_score
 	
 	# public method that wraps the methods above...

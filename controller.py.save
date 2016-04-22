@@ -39,10 +39,10 @@ class controller():
 			discrete_expressions_table.append(map(str,transaction))
 		return discrete_expressions_table
 
-	def __produce_clinical_table(self,file,clinic_attr):
+	def __produce_clinical_table(self,file):
 		rows = self.__read(file,'\t')
 		id_idx = rows[0].index("Patient ID")
-		status_idx = rows[0].index(clinic_attr)
+		status_idx = rows[0].index("Overall Survival Status")
 
 		reduced_clinical_table = []
 		reduced_clinical_table.append(["id","survival"])
@@ -63,13 +63,14 @@ class controller():
 				solutions_actual[threshold].append(l)	
 		return solutions_actual
 		
-	def __init__(self,file_expr,file_clinic,thresholds,status,clinic_attr,override_set=None):
+	def __init__(self,file_expr,file_clinic,thresholds,override_set=None,status):
 	
 		print("controller - pulling transactions")
 		res =  self.__pull_transaction_data(file_expr)
-				
+		
+		
 		print("controller initalizing fim")
-		fim = fp_growth.FrequentItemsetMiner(duplicate_solutions=False)
+		fim = fp_growth.FrequentItemsetMiner()
 		fim.initialize(res['transactions'],discretization_function=fp_growth.discretize_on_avg)
 		
 		print("controller - expanding proteins list")
@@ -82,11 +83,12 @@ class controller():
 		solutions_actual = self.__convert_indexs_to_actuals(solutions_index,proteins)
 
 		print("controller - produce clinical and expression tables")
-		clinic_table = self.__produce_clinical_table(file_clinic,clinic_attr)
+		clinic_table = self.__produce_clinical_table(file_clinic)
 		express_table = self.__produce_expression_table(fim.discretized_transactions,proteins,res['patients'])
 
 		print("controller - initalize finder")
 		finder = cgpb_finder.cgpb_finder.from_tables(clinic_table,express_table)
+
 		print("finder - run confirmer for all freq_sets")
 		ranks = []
 		if override_set is None:
@@ -96,26 +98,26 @@ class controller():
 						result = finder.confirm_cgpb(freq_set,status)
 						string ="("+ ','.join(freq_set)+")\t"+str(result["z-score"])
 						ranks.append(string)
-						print("checked:("+str(threshold)+","+str(freq_set)+") "+string)
+						print("checked:("+str(threshold)+","+str(idx_f)+") "+string)
 		else:
 			for freq_set in override_set:
 				if(len(freq_set)>0):
 					result = finder.confirm_cgpb(freq_set,status)
 					string = "("+','.join(freq_set)+")\t"+str(result["z-score"])
 					ranks.append(string)
-					print("checked:("+str(freq_set)+") "+string)
+					print("checked:("+str(idx_f)+") "+string)
 
 		print("controller - save the logs!")
-		with open('ranks.txt', 'w') as f:
+		with open(filename, 'w') as f:
 				for s in ranks:
 					f.write(s + '\n')		
 
 class controller_test():
 	# integration tests
 	def test_constructor_with_override():
-		c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',[4])
+		c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',[4],True)
 	def test_constructor_without_override():
-		c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',[4])
+		c = controller('examples/data/TCGA-THCA-L3-S54_reduced.csv','examples/data/thca_tcga_clinical_data.tsv',[4],status)
 
 	# unit tests
 	def test_convert_indexs_to_actuals():
@@ -136,4 +138,4 @@ class controller_test():
 	def test_read():
 		print("-")
 
-c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(65,110),True,'Disease Free Status')
+c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(100,225))
