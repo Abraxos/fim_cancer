@@ -63,23 +63,26 @@ class controller():
 				solutions_actual[threshold].append(l)	
 		return solutions_actual
 		
-	def __init__(self,file_expr,file_clinic,thresholds,status,clinic_attr,discrete_func,override_set=None):
+	def __init__(self,file_expr,file_clinic,thresholds,status,clinic_attr,discrete_func,file_survival=None,override_set=None):
 	
 		print("controller - pulling transactions")
 		res =  self.__pull_transaction_data(file_expr)
-				
+	
+		print("controller - surivival data")
+		survival_table = None
+		if file_survival is not None:
+			survival_table = self.__read(file_survival,"\t")
+			
 		print("controller initalizing fim")
 		fim = fp_growth.FrequentItemsetMiner(duplicate_solutions=False)
 		fim.initialize(res['transactions'],discretization_function=discrete_func)
 
-		print(fim.discretized_transactions)
-
 		print("controller - expanding proteins list")
 		proteins = self.__expand_proteins(res['proteins'],fim.discretized_transactions)
-		
+
 		print("fim - run")
 		solutions_index = fim.run(thresholds)
-		
+
 		print("controller - map index to actuals")
 		solutions_actual = self.__convert_indexs_to_actuals(solutions_index,proteins)
 
@@ -95,15 +98,31 @@ class controller():
 			for threshold in thresholds:
 				for freq_set in solutions_actual[threshold]:
 					if(len(freq_set)> 0):
-						result = finder.confirm_cgpb(freq_set,status)
-						string ="("+ ','.join(freq_set)+")\t"+str(result["z-score"])
+						result = finder.confirm_cgpb(freq_set,status,survival_table)
+						string =','.join(freq_set)+"\t"+str(result["z-score"])+"\t"+str(result["log-rank-test"])+"\t"+ \
+						str(result["counts"]["expressed and alive"])+"\t"+ \
+						str(result["counts"]["expressed and dead"])+"\t"+ \
+						str(result["counts"]["unexpressed and alive"])+"\t"+ \
+						str(result["counts"]["unexpressed and dead"])+"\t"+ \
+						str(result["counts"]["expressed"])+"\t"+ \
+						str(result["counts"]["unexpressed"])+"\t"+ \
+						str(result["counts"]["alive"])+"\t"+ \
+						str(result["counts"]["dead"])
 						ranks.append(string)
 						print("checked:("+str(threshold)+","+str(freq_set)+") "+string)
 		else:
 			for freq_set in override_set:
 				if(len(freq_set)>0):
-					result = finder.confirm_cgpb(freq_set,status)
-					string = "("+','.join(freq_set)+")\t"+str(result["z-score"])
+					result = finder.confirm_cgpb(freq_set,status,survival_table)
+					string =','.join(freq_set)+"\t"+str(result["z-score"])+"\t"+str(result["log-rank-test"])+"\t"+ \
+					str(result["counts"]["expressed and alive"])+"\t"+ \
+					str(result["counts"]["expressed and dead"])+"\t"+ \
+					str(result["counts"]["unexpressed and alive"])+"\t"+ \
+					str(result["counts"]["unexpressed and dead"])+"\t"+ \
+					str(result["counts"]["expressed"])+"\t"+ \
+					str(result["counts"]["unexpressed"])+"\t"+ \
+					str(result["counts"]["alive"])+"\t"+ \
+					str(result["counts"]["dead"])
 					ranks.append(string)
 					print("checked:("+str(freq_set)+") "+string)
 
@@ -189,4 +208,4 @@ def discretize_on_sd(column, name=None):
 	else:
 		return [high_column, mid_column, low_column]
 
-c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(110,140),False,'Overall Survival Status',discretize_on_sd)
+c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(110,140),False,'Overall Survival Status',discretize_on_sd,'examples/data/LUSC/lusc_survival.tsv')
