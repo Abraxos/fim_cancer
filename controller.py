@@ -174,6 +174,23 @@ def discretize_on_avg(column, name=None):
 	else:
 		return [high_column, low_column]
 
+def discretize_on_zero(column, name=None):
+	name = name if name else None
+	avg = float(sum(column)) / len(column)
+	high_column = []
+	low_column = []
+	for c in column:
+		if c >= 0:
+			high_column.append(1)
+			low_column.append(0)
+		else:
+			high_column.append(0)
+			low_column.append(1)
+	if name:
+		return [high_column, low_column],[name + '_high', name + '_low']
+	else:
+		return [high_column, low_column]
+
 def discretize_on_sd(column, name=None):
 	name = name if name else None
 	avg = float(sum(column)) / len(column)
@@ -208,4 +225,6 @@ def discretize_on_sd(column, name=None):
 	else:
 		return [high_column, mid_column, low_column]
 
-c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(110,140),False,'Overall Survival Status',discretize_on_sd,'examples/data/LUSC/lusc_survival.tsv')
+c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(60,110),True,'Overall Survival Status',discretize_on_zero,'examples/data/LUSC/lusc_survival.tsv')
+#c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(110,140),False,'Disease Free Status',discretize_on_sd)
+

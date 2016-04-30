@@ -145,34 +145,14 @@ class cgpb_finder():
 		expressed_C = []
 		unexpressed_T = []
 		unexpressed_C = []
-		col_1 = ""
-		col_2 = ""
-		col_3 = ""
 		for idx,row in enumerate(duration_table):
-			if(idx==0):
-				col_1 = str(row[0])
-				col_2 = str(row[1])
-				col_3 = str(row[2])
-				data[col_1] = []
-				data[col_2] = []
-				data[col_3] = []
-				data["group"] = []
-			else:
-				len(data[col_2])
+			if(idx>0):
 				if row[0] in unexpressed_array and row[1] !=  "NA" and row[2] !=  "NA":
-					data[col_1].append(str(row[0]))
-					data[col_2].append(float(row[1]))
 					unexpressed_T.append(float(row[1]))
-					data[col_3].append(int(row[2]))
 					unexpressed_C.append(int(row[2]))
-					data["group"].append("unexpressed")
 				elif row[0] in expressed_array and row[1] != "NA" and row[2] !=  "NA":
-					data[col_1].append(str(row[0]))
-					data[col_2].append(float(row[1]))
 					expressed_T.append(float(row[1]))
-					data[col_3].append(int(row[2]))
 					expressed_C.append(int(row[2]))
-					data["group"].append("expressed")
 
 		results = logrank_test(expressed_T, unexpressed_T, expressed_C, unexpressed_C, alpha=.95 )
 		if(results.p_value < .0006):
@@ -183,7 +163,7 @@ class cgpb_finder():
 			kmf.fit(unexpressed_T, event_observed=unexpressed_C, label="None-Satisfying")
 			kmf.plot(ax=ax, ci_force_lines=False)
 			plt.ylim(0,1)
-			plt.title("Lifespans of LUSC Patients ("+freq_set+")")
+			plt.title("Lifespans of LUSC Patients ("+str(freq_set)+")")
 			plt.show()	
 		return results.p_value
 
@@ -195,7 +175,7 @@ class cgpb_finder():
 			p_value = self.__KM_analysis(duration_table,count["expressed array"],count["unexpressed array"],freq_set)
 			return {"z-score":z_score,"counts":count,"log-rank-test":p_value}
 		else:
-			return {"z-score":z_score,"counts":count}
+			return {"z-score":z_score,"counts":count,"log-rank-test":"NA"}
 
 		
 class cgpb_finder_test():
