@@ -51,8 +51,8 @@ class cgpb_finder():
 
 	@classmethod
 	def from_files(cls,file_clinic,file_expr):
-		c_rows = cls.__read(file_expr)
-		e_rows = cls.__read(file_clinic)
+		c_rows = cls.__read(file_clinic)
+		e_rows = cls.__read(file_expr)
 		return cls(cls.__create_dict(e_rows,c_rows))
 
 
@@ -163,7 +163,7 @@ class cgpb_finder():
 			kmf.fit(unexpressed_T, event_observed=unexpressed_C, label="None-Satisfying")
 			kmf.plot(ax=ax, ci_force_lines=False)
 			plt.ylim(0,1)
-			plt.title("Lifespans of LUSC Patients ("+str(freq_set)+")")
+			plt.title("Lifespans ("+str(freq_set)+")")
 			plt.show()	
 		return results.p_value
 
@@ -177,25 +177,34 @@ class cgpb_finder():
 		else:
 			return {"z-score":z_score,"counts":count,"log-rank-test":"NA"}
 
-		
-class cgpb_finder_test():
-	# integeration test
-	# use the test data for which we know the result...
-	def test_confirm_cgpb():
-		finder = cgpb_finder.from_files('input_clinic.tsv','input_expr.tsv')
-		assert(finder.confirm_cgpb(['p1','p2'],True)== {"z-score":1.138550085106622, "statistically different?": True})
-	
-	# unit tests 
-	# I'll get to these, plan was to make this a subclass of cgpb_finder, didn't realize python didn't have access control. 
-	# doh! sooo this code seperation won't work...
-	def test_two_proportions_z_test(self,count):
-		print("-")
 
-	def test_get_instance_count(self,freq_set):
-		print("-")
+        # unit tests
+	def test_two_proportions_z_test(self):
+		status = True
+		count = {'expressed and alive': 1, 'expressed and dead': 1, 'alive': 9, 'unexpressed': 12, 'dead': 5, 'unexpressed array': ['t8', 't9', 't6', 't4', 't5', 't2', 't1', 't14', 't10', 't11', 't12', 't13'], 'expressed array': ['t7', 't3'], 'unexpressed and alive': 8, 'expressed': 2, 'unexpressed and dead': 4}
+		print(self.__two_proportions_z_test(count,status))
 
-	def test_constructor_from_file(file_clinic,file_expr):
-		print("-")
+        def test_KM_analysis(self):
+		duration_table = [['patient', 'time', 'status'], ['t1', '3.65', '0'], ['t2', '65.6', '0'], ['t3', '63.3', '0'], ['t4', '19.74', '1'], ['t5', '29.99', '0'], ['t6', '19.22', '0'], ['t7', '5.03', '1'], ['t8', '13.3', '0'], ['t9', '22.96', '0'], ['t10', '17.84', '1'],['t11', '24.32', '1'],['t12', '30.12', '1'],['t13', '45.42', '1'],['t14', '65.84', '1']]
+		expressed_array = ['t8', 't9', 't6', 't4', 't5', 't2', 't1', 't14', 't10', 't11', 't12', 't13']
+		unexpressed_array = ['t7', 't3']
+		print(self.__KM_analysis(duration_table,expressed_array,unexpressed_array,['p1_h','p2_l']))
 
-	def test_constructor_from_table(table_clinic,table_expr):
-		print("-")
+# run integration test and unit tests
+def test_confirm_cgpb():
+	finder = cgpb_finder.from_files('input_clinic.tsv','input_expr.tsv')
+	print("Test - two proportions z test")
+	finder.test_two_proportions_z_test()
+
+	print("Test - KM Analysis")	
+	finder.test_KM_analysis()
+
+	print("Test - a) Integeration test using sample files")
+	print(finder.confirm_cgpb(['p1_h','p2_l'],True))
+
+	print("Test - b) test the dictionary created from sample files")
+	print(finder.get_dictionary())
+
+# run tests
+print(test_confirm_cgpb())
+

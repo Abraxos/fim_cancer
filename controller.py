@@ -62,7 +62,9 @@ class controller():
 					l[idx]=actual
 				solutions_actual[threshold].append(l)	
 		return solutions_actual
-		
+
+        #Input - Expression Data and Clinical Data, Binary Clinic Attribute and Discretization Function.
+        #Override Input - Surivival Data to trigger KM Analysis and override set to avoid frequent item set mining.
 	def __init__(self,file_expr,file_clinic,thresholds,status,clinic_attr,discrete_func,file_survival=None,override_set=None):
 	
 		print("controller - pulling transactions")
@@ -131,14 +133,12 @@ class controller():
 				for s in ranks:
 					f.write(s + '\n')		
 
-class controller_test():
-	# integration tests
 	def test_constructor_with_override():
 		print("-")
-	def test_constructor_without_override():
+
+        def test_constructor_without_override():
 		print("-")
 
-	# unit tests
 	def test_convert_indexs_to_actuals():
 		print("-")
 	
@@ -227,4 +227,3 @@ def discretize_on_sd(column, name=None):
 
 c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(60,110),True,'Overall Survival Status',discretize_on_zero,'examples/data/LUSC/lusc_survival.tsv')
 #c = controller('examples/data/TCGA-LUSC-L3-S51.csv','examples/data/lusc_tcga_clinical_data.tsv',range(110,140),False,'Disease Free Status',discretize_on_sd)
-
